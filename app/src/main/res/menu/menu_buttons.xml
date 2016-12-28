@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/copyMenu"
+    tools:context="com.example.ciprian.project_afd.MainActivity">
+
+    <item
+        android:id="@+id/pasteButton"
+        android:icon="@drawable/ic_action_copy"
+        android:title="@string/paste"
+        app:showAsAction="always" />
+
+</menu>
