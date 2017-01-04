@@ -26,12 +26,19 @@ import android.widget.Toast;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
 
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
+
+    public static final String ROOT_BUNDLE = "Root";
+    public static final String CURRENT_FILE_BUNDLE = "CurrentFile";
+    public static final String FILE_TO_BE_COPIED_BUNDLE = "FileToBeCopied";
     private ListView listView;
     private ItemAdapter adapter;
     private File root;
@@ -45,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private File fileToBeCopied = null;
     private MenuItem pasteItemButton = null;
 
-    private MySnackBar mySnackBar;
+    public MySnackBar mySnackBar;
 
 
     private FileOperations fileOperations;
@@ -55,62 +62,81 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
         coordinatorLayout = findViewById(R.id.layout);
-        root = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
-        currentFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
-        getFiles(root);
-        addFilesToListView();
+        loadPreviousSession(savedInstanceState);
         listView = (ListView) findViewById(R.id.listView);
         adapter = new ItemAdapter(this, R.layout.listview_item_row, items);
         listView.setAdapter(adapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Item itemClicked = items.get(position);
-                Log.v("File clicked", itemClicked.title);
-                if (itemClicked.title.compareTo("..") == 0) {
-                    //Previous button was pressed
-                    Log.v("Parent", currentFile.getParent());
-                    currentFile = new File(currentFile.getParent());
-                    txtHeader.setText(currentFile.getName());
-                    Log.v("Current file:", currentFile.getAbsolutePath());
-                    refreshListView(currentFile);
-                    return;
-                }
-                File fileClicked = getFileByName(itemClicked.title);
-                if (fileClicked.isDirectory()) {
-                    currentFile = fileClicked;
-                    txtHeader.setText(currentFile.getName());
-                    refreshListView(fileClicked);
-                    listView.smoothScrollToPositionFromTop(0, 0, 0);
-                } else {
-                    //Start the activity regarding the text editor
-
-                    Intent intent = new Intent(MainActivity.this, TextEditor.class);
-                    Log.v("File clicked", fileClicked.getName());
-                    intent.putExtra("Name", fileClicked.getAbsolutePath());
-                    startActivity(intent);
-                }
-
-            }
-        });
-
+        listView.setOnItemClickListener(this);
 
         buildActionSheet();
-//        registerForContextMenu(listView);
 
         txtHeader = (TextView) findViewById(R.id.txtHeader);
-        txtHeader.setText("Root");
+        setHeaderName();
         Log.v("Root Name", root.getName());
         Log.v("Root absolute name", root.getAbsolutePath());
         instantiateFabHandler();
 //        fileOperations = new FileOperations(MainActivity.this, coordinatorLayout, pasteItemButton, listView);
-
+        addPreviousButton(currentFile);
 
         mySnackBar = new MySnackBar(coordinatorLayout);
     }
+
+    /**
+     * Function that sets the header name(current file name)
+     */
+    private void setHeaderName() {
+        if (root.getAbsolutePath().equals(currentFile.getAbsolutePath())) {
+            txtHeader.setText("Root");
+        } else {
+            txtHeader.setText(currentFile.getName());
+        }
+    }
+
+    /**
+     * Function that restore the previous sesion if exists and
+     * get the content of the current location
+     *
+     * @param savedInstanceState
+     */
+    private void loadPreviousSession(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            String rootFileName = savedInstanceState.getString(ROOT_BUNDLE);
+            if (rootFileName != null) {
+                root = new File(rootFileName);
+                Log.v("RootFile", rootFileName);
+            }
+            String currentFileName = savedInstanceState.getString(CURRENT_FILE_BUNDLE);
+            if (currentFileName != null) {
+                currentFile = new File(currentFileName);
+                Log.v("CurrentFile", currentFileName);
+            }
+            String fileToCopy = savedInstanceState.getString(FILE_TO_BE_COPIED_BUNDLE);
+            if (fileToCopy != null) {
+                fileToBeCopied = new File(fileToCopy);
+                Log.v("FileToBeCopied", fileToCopy);
+            }
+            getFiles(currentFile);
+        } else {
+            Log.v("Bundle", "Is null");
+            root = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
+            currentFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
+            getFiles(root);
+        }
+        addFilesToListView();
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 200) {
+            if (resultCode == 200) {
+                refreshListView(currentFile);
+            }
+        }
+    }
+
 
     private void buildActionSheet() {
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -209,6 +235,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_buttons, menu);
         pasteItemButton = menu.getItem(0);
+        if (fileToBeCopied != null) {
+            pasteItemButton.setVisible(true);
+        }
         pasteItemButton.setVisible(false);
         return true;
     }
@@ -397,6 +426,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getFiles(File file) {
+        Log.v("GetFiles", file.getAbsolutePath());
         if (file.isDirectory()) {
             for (File aux : file.listFiles()) {
                 if (aux.isDirectory()) {
@@ -411,12 +441,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addFilesToListView() {
-        for (File folder : folders) {
-            items.add(new Item(R.drawable.folder1, folder.getName(), "1234KB", "22"));
-        }
 
+        for (File folder : folders) {
+            Date lastModified = new Date(folder.lastModified());
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+            items.add(new Item(R.drawable.folder1, folder.getName(), formatter.format(lastModified), String.valueOf(folder.list().length) + " Files"));
+        }
         for (File file : files) {
-            items.add(new Item(R.drawable.file1, file.getName(), "1234KB", "33"));
+            Date lastModified = new Date(file.lastModified());
+            SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+            DecimalFormat twoDForm = new DecimalFormat("#.##");
+            String value = String.valueOf(twoDForm.format(file.length() / 1024.0));
+            items.add(new Item(R.drawable.file1, file.getName(), formatter.format(lastModified), value + " KB"));
         }
     }
 
@@ -427,11 +463,15 @@ public class MainActivity extends AppCompatActivity {
         listView.invalidateViews();
         getFiles(file);
         addFilesToListView();
+        addPreviousButton(file);
+        listView.invalidateViews();
+    }
+
+    private void addPreviousButton(File file) {
         if (file.getAbsolutePath().compareTo(root.getAbsolutePath()) != 0) {
             //I have to add previous button
-            items.add(0, new Item(R.drawable.ic_action_back, "..", "", ""));
+            items.add(0, new Item(R.drawable.back, "..", "", ""));
         }
-        listView.invalidateViews();
     }
 
     private void instantiateFabHandler() {
@@ -439,4 +479,46 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putString(ROOT_BUNDLE, root.getAbsolutePath());
+        outState.putString(CURRENT_FILE_BUNDLE, currentFile.getAbsolutePath());
+        if (fileToBeCopied != null) {
+            outState.putString(FILE_TO_BE_COPIED_BUNDLE, fileToBeCopied.getAbsolutePath());
+        }
+        Log.v("SaveRoot", root.getAbsolutePath());
+        Log.v("SaveCurrentFile", currentFile.getAbsolutePath());
+        super.onSaveInstanceState(outState);
+
+
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Item itemClicked = items.get(position);
+        Log.v("File clicked", itemClicked.title);
+        if (itemClicked.title.compareTo("..") == 0) {
+            //Previous button was pressed
+            Log.v("Parent", currentFile.getParent());
+            currentFile = new File(currentFile.getParent());
+            Log.v("Current file:", currentFile.getAbsolutePath());
+            refreshListView(currentFile);
+            return;
+        }
+        File fileClicked = getFileByName(itemClicked.title);
+        if (fileClicked.isDirectory()) {
+            currentFile = fileClicked;
+            txtHeader.setText(currentFile.getName());
+            refreshListView(fileClicked);
+            listView.smoothScrollToPositionFromTop(0, 0, 0);
+        } else {
+            //Start the activity regarding the text editor
+
+            Intent intent = new Intent(MainActivity.this, TextEditor.class);
+            Log.v("File clicked", fileClicked.getName());
+            intent.putExtra("Name", fileClicked.getAbsolutePath());
+            startActivityForResult(intent, 200);
+        }
+
+    }
 }

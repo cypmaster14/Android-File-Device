@@ -5,4 +5,7 @@
     <color name="colorAccent">#FF4081</color>
     <color name="fab1_color">#4CAF50</color>
     <color name="fab2_color">#2196F3</color>
+    <color name="blue_200">#FF90CAF9</color>
+    <color name="blue_500">#FF2196F3</color>
+    <color name="blue_700">#FF1976D2</color>
 </resources>

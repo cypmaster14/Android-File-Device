@@ -3,7 +3,9 @@ package com.example.ciprian.project_afd;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
@@ -15,6 +17,7 @@ import android.widget.Toast;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Created by Ciprian on 24/12/2016.
@@ -67,7 +70,36 @@ public class FabHandler {
     }
 
     private void newFileButton() {
-        Toast.makeText(context, "New file button click", Toast.LENGTH_SHORT).show();
+        final EditText inputText = new EditText(context);
+        inputText.setInputType(InputType.TYPE_CLASS_TEXT);
+        new AlertDialog.Builder(context)
+                .setTitle("New File")
+                .setMessage("Enter the name of the new file:")
+                .setView(inputText)
+                .setPositiveButton("Create", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(context, TextEditor.class);
+                        String newFilePath = context.currentFile.getAbsolutePath() + "/" + inputText.getText().toString();
+                        intent.putExtra("Name", newFilePath);
+                        File newFile = new File(newFilePath);
+                        try {
+                            newFile.createNewFile();
+                            context.startActivity(intent);
+
+                        } catch (IOException e) {
+                            Log.v("Exception", e.toString());
+                            context.mySnackBar.showSnackBar("Failed to createa a new file", Snackbar.LENGTH_LONG);
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                })
+                .show();
         startAnimationCloseFAB();
     }
 

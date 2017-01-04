@@ -12,18 +12,21 @@
         android:layout_marginBottom="5dp"
         android:layout_marginRight="15dp"
         android:layout_marginTop="5dp"
-        android:gravity="center_vertical" />
+        android:gravity="center_vertical"
+        android:src="@drawable/folder32"/>
 
     <TextView
         android:id="@+id/txtTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="5dip"
-        android:layout_marginTop="5dip"
+        android:layout_marginTop="10dip"
         android:layout_toRightOf="@+id/imgIcon"
         android:maxLines="1"
-        android:text="@+id/TextView01"
-        android:textStyle="bold">
+        android:text="Ceva"
+        android:textAppearance="@android:style/TextAppearance.Material.Medium"
+        android:textColor="@android:color/black"
+        android:textSize="17sp">
 
 
     </TextView>
@@ -35,7 +38,9 @@
         android:layout_below="@+id/txtTitle"
         android:layout_marginLeft="10dip"
         android:layout_toRightOf="@+id/imgIcon"
-        android:text="@+id/TextView02">
+        android:layout_marginTop="15dp"
+        android:text="Last modified time"
+        android:textColor="@android:color/black">
 
     </TextView>
 
@@ -46,7 +51,9 @@
         android:layout_alignParentRight="true"
         android:layout_below="@+id/txtTitle"
         android:layout_marginLeft="5dip"
-        android:text="@+id/TextViewDate">
+        android:text="Size or nr files"
+        android:textAppearance="@android:style/TextAppearance.Material.Small"
+        android:textColor="@android:color/black">
 
     </TextView>
 </RelativeLayout>

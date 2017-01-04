@@ -20,8 +20,10 @@
         </activity>
         <activity
             android:name=".TextEditor"
-            android:parentActivityName="com.example.ciprian.project_afd.MainActivity">
-
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
         </activity>
     </application>
 
