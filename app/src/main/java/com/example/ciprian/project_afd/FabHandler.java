@@ -85,7 +85,7 @@ public class FabHandler {
                         File newFile = new File(newFilePath);
                         try {
                             newFile.createNewFile();
-                            context.startActivity(intent);
+                            context.startActivityForResult(intent, 200);
 
                         } catch (IOException e) {
                             Log.v("Exception", e.toString());
@@ -120,7 +120,7 @@ public class FabHandler {
                         } catch (Exception e) {
                             Log.v("Exception", "Failed to create file");
                         }
-                        context.refreshListView(context.currentFile);
+                        context.refreshListView();
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

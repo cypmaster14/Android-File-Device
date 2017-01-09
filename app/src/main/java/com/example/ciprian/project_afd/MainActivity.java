@@ -1,6 +1,7 @@
 package com.example.ciprian.project_afd;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,8 +9,10 @@ import android.os.Environment;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.text.InputType;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -39,6 +42,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public static final String ROOT_BUNDLE = "Root";
     public static final String CURRENT_FILE_BUNDLE = "CurrentFile";
     public static final String FILE_TO_BE_COPIED_BUNDLE = "FileToBeCopied";
+    public static final String FILES_FOUND = "FileFound";
+    public static final int FILE_MODIFIED = 200;
+    public static final int SEARCH_FOLDER_CLICKED = 300;
+    public static final String FILE_TO_OPEN = "Name";
+
+
     private ListView listView;
     private ItemAdapter adapter;
     private File root;
@@ -50,12 +59,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private TextView txtHeader;
     public File currentFile;
     private File fileToBeCopied = null;
+
     private MenuItem pasteItemButton = null;
+    private MenuItem searchButton = null;
+    private ProgressDialog progressBar;
+
 
     public MySnackBar mySnackBar;
 
+    private SearchView searchView;
 
-    private FileOperations fileOperations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,10 +90,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Log.v("Root Name", root.getName());
         Log.v("Root absolute name", root.getAbsolutePath());
         instantiateFabHandler();
-//        fileOperations = new FileOperations(MainActivity.this, coordinatorLayout, pasteItemButton, listView);
-        addPreviousButton(currentFile);
+
+        if (!currentFile.getAbsolutePath().equals(root.getAbsolutePath())) {
+            addPreviousButton();
+        }
 
         mySnackBar = new MySnackBar(coordinatorLayout);
+
     }
 
     /**
@@ -117,12 +133,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 fileToBeCopied = new File(fileToCopy);
                 Log.v("FileToBeCopied", fileToCopy);
             }
-            getFiles(currentFile);
+            getFiles();
         } else {
             Log.v("Bundle", "Is null");
             root = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
             currentFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath());
-            getFiles(root);
+            getFiles();
         }
         addFilesToListView();
     }
@@ -130,9 +146,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 200) {
-            if (resultCode == 200) {
-                refreshListView(currentFile);
+        if (requestCode == FILE_MODIFIED) {
+            if (resultCode == FILE_MODIFIED) {
+                refreshListView();
+            }
+        } else if (requestCode == SEARCH_FOLDER_CLICKED) {
+            if (resultCode == SEARCH_FOLDER_CLICKED) {
+                String folderFound = data.getStringExtra(SearchActivity.FOUND_FOLDER_NAME);
+                currentFile = new File(folderFound);
+                refreshListView();
             }
         }
     }
@@ -188,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                     }
                                 })
                                 .show();
-                        refreshListView(currentFile);
+                        refreshListView();
                         listView.invalidateViews();
                         bottomSheetDialog.hide();
                     }
@@ -219,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                     }
                                 })
                                 .show();
-                        refreshListView(currentFile);
+                        refreshListView();
                         bottomSheetDialog.hide();
 
                     }
@@ -232,25 +254,68 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_buttons, menu);
-        pasteItemButton = menu.getItem(0);
+        pasteItemButton = menu.findItem(R.id.pasteButton);
         if (fileToBeCopied != null) {
             pasteItemButton.setVisible(true);
         }
         pasteItemButton.setVisible(false);
+        searchButton = menu.findItem(R.id.menuSearch);
+        final ActionBar actionBar = getSupportActionBar();
+        searchView = (SearchView) searchButton.getActionView();
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.v("File Entered", query);
+
+                FileSearch fileSearch = new FileSearch(root, query.trim());
+                Thread searchThread = new Thread(fileSearch);
+                searchThread.start();
+                try {
+                    searchThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+                List<String> filesFound = fileSearch.getListOfFoundFiles();
+                String[] found = new String[filesFound.size()];
+                for (int i = 0; i < filesFound.size(); i++) {
+                    found[i] = filesFound.get(i);
+                }
+                Log.v("Found", found.toString());
+
+                searchView.setIconified(true);
+                searchView.clearFocus();
+                searchButton.collapseActionView();
+                searchView.setQuery("", false);
+                searchView.setIconified(true);
+
+                intent.putExtra(FILES_FOUND, found);
+                startActivityForResult(intent, 300);
+
+
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+
+
         return true;
     }
 
     public boolean onOptionsItemSelected(MenuItem item) {
-
 
         switch (item.getTitle().toString()) {
             case "Paste":
                 Log.v("Paste Button", "Paste button was pressed");
                 pasteItemButton.setVisible(false);
                 pasteFile();
-                refreshListView(currentFile);
+                refreshListView();
                 break;
 
             default:
@@ -312,7 +377,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 break;
             case "Paste":
                 pasteFile();
-                refreshListView(currentFile);
+                refreshListView();
                 break;
             case "Rename":
                 final EditText input = new EditText(this);
@@ -361,7 +426,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Log.v("Rename", "True");
             Toast.makeText(getApplicationContext(), "File was renamed:" + newName, Toast.LENGTH_SHORT).show();
 
-            refreshListView(currentFile);
+            refreshListView();
 
         } catch (Exception exception) {
             Log.v("Excetion", exception.toString());
@@ -379,7 +444,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         items.remove(fileToBeRemove);
         listView.invalidateViews();
         adapter.notifyDataSetChanged();
-        refreshListView(currentFile);
+        refreshListView();
         mySnackBar.showSnackBar("File was removed", Snackbar.LENGTH_LONG);
     }
 
@@ -425,10 +490,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return null;
     }
 
-    private void getFiles(File file) {
-        Log.v("GetFiles", file.getAbsolutePath());
-        if (file.isDirectory()) {
-            for (File aux : file.listFiles()) {
+    private void getFiles() {
+        Log.v("GetFiles", currentFile.getAbsolutePath());
+        if (currentFile.isDirectory()) {
+            for (File aux : currentFile.listFiles()) {
                 if (aux.isDirectory()) {
                     folders.add(aux);
                 } else {
@@ -456,22 +521,23 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
-    public void refreshListView(File file) {
+    public void refreshListView() {
         items.clear();
         folders.clear();
         files.clear();
         listView.invalidateViews();
-        getFiles(file);
+        getFiles();
         addFilesToListView();
-        addPreviousButton(file);
+        if (!currentFile.getAbsolutePath().equals(root.getAbsolutePath())) {
+            addPreviousButton();
+        }
         listView.invalidateViews();
+        setHeaderName();
+
     }
 
-    private void addPreviousButton(File file) {
-        if (file.getAbsolutePath().compareTo(root.getAbsolutePath()) != 0) {
-            //I have to add previous button
-            items.add(0, new Item(R.drawable.back, "..", "", ""));
-        }
+    private void addPreviousButton() {
+        items.add(0, new Item(R.drawable.back, "..", "", ""));
     }
 
     private void instantiateFabHandler() {
@@ -502,22 +568,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             Log.v("Parent", currentFile.getParent());
             currentFile = new File(currentFile.getParent());
             Log.v("Current file:", currentFile.getAbsolutePath());
-            refreshListView(currentFile);
+            refreshListView();
             return;
         }
         File fileClicked = getFileByName(itemClicked.title);
         if (fileClicked.isDirectory()) {
             currentFile = fileClicked;
             txtHeader.setText(currentFile.getName());
-            refreshListView(fileClicked);
+            refreshListView();
             listView.smoothScrollToPositionFromTop(0, 0, 0);
         } else {
             //Start the activity regarding the text editor
-
             Intent intent = new Intent(MainActivity.this, TextEditor.class);
             Log.v("File clicked", fileClicked.getName());
-            intent.putExtra("Name", fileClicked.getAbsolutePath());
-            startActivityForResult(intent, 200);
+            intent.putExtra(FILE_TO_OPEN, fileClicked.getAbsolutePath());
+            startActivityForResult(intent, MainActivity.FILE_MODIFIED);
         }
 
     }

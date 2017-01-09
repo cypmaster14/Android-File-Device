@@ -53,7 +53,7 @@ public class ItemAdapter extends ArrayAdapter<Item> {
         holder.txtTitle.setText(item.title);
         holder.imgIcon.setImageResource(item.icon);
         holder.TextView02.setText(item.data);
-        holder.TextViewDate.setText(item.path);
+        holder.TextViewDate.setText(item.size);
 
         return row;
     }

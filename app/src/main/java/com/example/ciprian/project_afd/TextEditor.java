@@ -54,7 +54,7 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
         setContentView(R.layout.activity_text_editor);
 
         stackOfContentForUndo = new Stack<>();
-        this.setResult(200);
+        this.setResult(MainActivity.FILE_MODIFIED);
         populateFonts();
 
         setupTextEditor(savedInstanceState);
