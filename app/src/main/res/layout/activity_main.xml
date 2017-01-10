@@ -36,9 +36,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/txtHeader"
+            android:background="#e3efec"
             android:divider="@null"
-            android:dividerHeight="0dp"
-            android:background="#e3efec" />
+            android:dividerHeight="0dp" />
 
     </RelativeLayout>
 
@@ -88,6 +88,7 @@
         android:layout_marginBottom="16dp"
         android:elevation="6dp"
         android:src="@drawable/ic_action_plus"
+        app:layout_behavior="com.example.ciprian.project_afd.ScrollAwareFABBehavior"
         app:pressedTranslationZ="12dp" />
 
     <include

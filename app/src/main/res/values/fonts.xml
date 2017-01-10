@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="Fonts">
+        <item name="Serif">Serif</item>
+        <item name="Monospace">Monospace</item>
+        <item name="Default">Default</item>
+        <item name="Default Bold">Default Bold</item>
+    </string-array>
+    <string-array name="FontsValues">
+        <item name="Serif">Serif</item>
+        <item name="Monospace">Monospace</item>
+        <item name="Default">Default</item>
+        <item name="Default Bold">Default Bold</item>
+    </string-array>
+
+    <string-array name="fontSize">
+        <item name="9">9</item>
+        <item name="10">10</item>
+        <item name="11">11</item>
+        <item name="12">12</item>
+        <item name="13">13</item>
+        <item name="13">14</item>
+        <item name="14">15</item>
+        <item name="15">16</item>
+        <item name="17">17</item>
+        <item name="18">18</item>
+        <item name="19">19</item>
+        <item name="20">20</item>
+    </string-array>
+    <string-array name="fontSizeValues">
+        <item name="9">9</item>
+        <item name="10">10</item>
+        <item name="11">11</item>
+        <item name="12">12</item>
+        <item name="13">13</item>
+        <item name="13">14</item>
+        <item name="14">15</item>
+        <item name="15">16</item>
+        <item name="17">17</item>
+        <item name="18">18</item>
+        <item name="19">19</item>
+        <item name="20">20</item>
+    </string-array>
+</resources>

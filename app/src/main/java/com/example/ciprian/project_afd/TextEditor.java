@@ -2,8 +2,11 @@ package com.example.ciprian.project_afd;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -34,6 +37,9 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
 
     public static final String FILE_CURRENT_CONTENT_BUNDLE = "FileCurrentContent";
     public static final String SAVE_BUTTON_SHOW_BUNDLE = "SaveButtonShow";
+    public static final int RESULT_SETTINGS = 700;
+    public static final String FONT_PREF_KEY = "fontPref";
+    public static final String FONT_SIZE_KEY = "fontSize";
     private KnifeText textEditor;
     private String fileInitialContent = "";
     private String fileCurrentContent;
@@ -45,10 +51,10 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
     private List<Typeface> fontTypes;
     private boolean saveButtonShow = false;
 
-    int selectedItem = 0;
+    private SharedPreferences sharedPreferences;
+
 
     @Override
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_editor);
@@ -57,6 +63,7 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
         this.setResult(MainActivity.FILE_MODIFIED);
         populateFonts();
 
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         setupTextEditor(savedInstanceState);
     }
 
@@ -93,6 +100,17 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
         textEditor.setVerticalScrollBarEnabled(true);
         textEditor.setText(fileCurrentContent);
         textEditor.addTextChangedListener(this);
+        textEditor.setTypeface(getFontByName(sharedPreferences.getString(FONT_PREF_KEY, fonts[0])));
+        textEditor.setTextSize(Float.valueOf(sharedPreferences.getString(FONT_SIZE_KEY, "12.0f")));
+    }
+
+    private Typeface getFontByName(String font) {
+        for (int i = 0; i < fonts.length; i++) {
+            if (fonts[i].equals(font)) {
+                return fontTypes.get(i);
+            }
+        }
+        return fontTypes.get(0);
     }
 
 
@@ -101,16 +119,16 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (fileInitialContent.compareTo(fileCurrentContent) != 0) {
                 promptSaveDialog();
+                return true;
             }
-            return true;
         }
         return super.onKeyDown(keyCode, event);
     }
 
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.editor_menu, menu);
-        saveMenuItem = menu.getItem(0);
+        saveMenuItem = menu.findItem(R.id.save);
         Log.v("Show button", String.valueOf(!fileInitialContent.equals(fileCurrentContent)));
         saveMenuItem.setVisible(!fileInitialContent.equals(fileCurrentContent));
         return true;
@@ -132,25 +150,9 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
                 saveFile();
                 Toast.makeText(TextEditor.this, "Content was saved", Toast.LENGTH_SHORT).show();
                 break;
-            case R.id.font:
-                AlertDialog.Builder builder =
-                        new AlertDialog.Builder(this);
-                builder.setTitle("Select One Letter");
-                int selected = selectedItem;
-                builder.setSingleChoiceItems(
-                        fonts,
-                        selected,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                selectedItem = which;
-                                Toast.makeText(TextEditor.this, "You Select Letter " + fonts[selectedItem], Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
-                                textEditor.setTypeface(fontTypes.get(selectedItem));
-                            }
-                        });
-                AlertDialog alert = builder.create();
-                alert.show();
+            case R.id.menu_settings:
+                Intent intent = new Intent(TextEditor.this, TextEditorPreferencesActivity.class);
+                startActivityForResult(intent, RESULT_SETTINGS);
 
             default:
 
@@ -158,6 +160,18 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
         return true;
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case RESULT_SETTINGS:
+                textEditor.setTypeface(getFontByName(sharedPreferences.getString(FONT_PREF_KEY, fonts[0])));
+                textEditor.setTextSize(Float.valueOf(sharedPreferences.getString(FONT_SIZE_KEY, "12.0f")));
+                break;
+            default:
+        }
+    }
 
     private void promptSaveDialog() {
         new AlertDialog.Builder(TextEditor.this)

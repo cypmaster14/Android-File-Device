@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.BottomSheetDialog;
@@ -16,6 +17,7 @@ import android.support.v7.widget.SearchView;
 import android.text.InputType;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -62,7 +64,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private MenuItem pasteItemButton = null;
     private MenuItem searchButton = null;
-    private ProgressDialog progressBar;
 
 
     public MySnackBar mySnackBar;
@@ -74,6 +75,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initUI(savedInstanceState);
+    }
+
+    private void initUI(Bundle savedInstanceState) {
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
         coordinatorLayout = findViewById(R.id.layout);
@@ -96,7 +101,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
 
         mySnackBar = new MySnackBar(coordinatorLayout);
-
     }
 
     /**
@@ -111,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     /**
-     * Function that restore the previous sesion if exists and
+     * Function that restore the previous session if exists and
      * get the content of the current location
      *
      * @param savedInstanceState
@@ -269,31 +273,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             public boolean onQueryTextSubmit(String query) {
                 Log.v("File Entered", query);
 
+
                 FileSearch fileSearch = new FileSearch(root, query.trim());
-                Thread searchThread = new Thread(fileSearch);
-                searchThread.start();
-                try {
-                    searchThread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
-                List<String> filesFound = fileSearch.getListOfFoundFiles();
-                String[] found = new String[filesFound.size()];
-                for (int i = 0; i < filesFound.size(); i++) {
-                    found[i] = filesFound.get(i);
-                }
-                Log.v("Found", found.toString());
-
-                searchView.setIconified(true);
-                searchView.clearFocus();
-                searchButton.collapseActionView();
-                searchView.setQuery("", false);
-                searchView.setIconified(true);
-
-                intent.putExtra(FILES_FOUND, found);
-                startActivityForResult(intent, 300);
-
+                new FileSearchAsync(MainActivity.this, searchView, searchButton).execute(fileSearch);
 
                 return false;
             }
@@ -526,6 +508,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         folders.clear();
         files.clear();
         listView.invalidateViews();
+        adapter.notifyDataSetChanged();
         getFiles();
         addFilesToListView();
         if (!currentFile.getAbsolutePath().equals(root.getAbsolutePath())) {
@@ -533,6 +516,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
         listView.invalidateViews();
         setHeaderName();
+
 
     }
 
@@ -565,10 +549,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         Log.v("File clicked", itemClicked.title);
         if (itemClicked.title.compareTo("..") == 0) {
             //Previous button was pressed
-            Log.v("Parent", currentFile.getParent());
-            currentFile = new File(currentFile.getParent());
-            Log.v("Current file:", currentFile.getAbsolutePath());
-            refreshListView();
+            goToParentDirectory();
             return;
         }
         File fileClicked = getFileByName(itemClicked.title);
@@ -579,11 +560,86 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             listView.smoothScrollToPositionFromTop(0, 0, 0);
         } else {
             //Start the activity regarding the text editor
-            Intent intent = new Intent(MainActivity.this, TextEditor.class);
-            Log.v("File clicked", fileClicked.getName());
-            intent.putExtra(FILE_TO_OPEN, fileClicked.getAbsolutePath());
-            startActivityForResult(intent, MainActivity.FILE_MODIFIED);
+            if (itemClicked.title.endsWith(".txt")) {
+                Intent intent = new Intent(MainActivity.this, TextEditor.class);
+                Log.v("File clicked", fileClicked.getName());
+                intent.putExtra(FILE_TO_OPEN, fileClicked.getAbsolutePath());
+                startActivityForResult(intent, MainActivity.FILE_MODIFIED);
+            } else {
+                openOtherFiles(getFileByName(itemClicked.title));
+            }
+        }
+    }
+
+    private void goToParentDirectory() {
+        Log.v("Parent", currentFile.getParent());
+        currentFile = new File(currentFile.getParent());
+        Log.v("Current file:", currentFile.getAbsolutePath());
+        refreshListView();
+    }
+
+    private void openOtherFiles(File url) {
+
+        Uri uri = Uri.fromFile(url);
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        // Check what kind of file you are trying to open, by comparing the url with extensions.
+        // When the if condition is matched, plugin sets the correct intent (mime) type,
+        // so Android knew what application to use to open the file
+        if (url.toString().contains(".doc") || url.toString().contains(".docx")) {
+            // Word document
+            intent.setDataAndType(uri, "application/msword");
+        } else if (url.toString().contains(".pdf")) {
+            // PDF file
+            intent.setDataAndType(uri, "application/pdf");
+        } else if (url.toString().contains(".ppt") || url.toString().contains(".pptx")) {
+            // Powerpoint file
+            intent.setDataAndType(uri, "application/vnd.ms-powerpoint");
+        } else if (url.toString().contains(".xls") || url.toString().contains(".xlsx")) {
+            // Excel file
+            intent.setDataAndType(uri, "application/vnd.ms-excel");
+        } else if (url.toString().contains(".zip") || url.toString().contains(".rar")) {
+            // WAV audio file
+            intent.setDataAndType(uri, "application/x-wav");
+        } else if (url.toString().contains(".rtf")) {
+            // RTF file
+            intent.setDataAndType(uri, "application/rtf");
+        } else if (url.toString().contains(".wav") || url.toString().contains(".mp3")) {
+            // WAV audio file
+            intent.setDataAndType(uri, "audio/x-wav");
+        } else if (url.toString().contains(".gif")) {
+            // GIF file
+            intent.setDataAndType(uri, "image/gif");
+        } else if (url.toString().contains(".jpg") || url.toString().contains(".jpeg") || url.toString().contains(".png")) {
+            // JPG file
+            intent.setDataAndType(uri, "image/jpeg");
+        } else if (url.toString().contains(".txt")) {
+            // Text file
+            intent.setDataAndType(uri, "text/plain");
+        } else if (url.toString().contains(".3gp") || url.toString().contains(".mpg") || url.toString().contains(".mpeg") || url.toString().contains(".mpe") || url.toString().contains(".mp4") || url.toString().contains(".avi")) {
+            // Video files
+            intent.setDataAndType(uri, "video/*");
+        } else {
+            //if you want you can also define the intent type for any other file
+
+            //additionally use else clause below, to manage other unknown extensions
+            //in this case, Android will show all applications installed on the device
+            //so you can choose which application to use
+            intent.setDataAndType(uri, "*/*");
         }
 
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
     }
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (!root.getAbsolutePath().equals(currentFile.getAbsolutePath())) {
+                goToParentDirectory();
+                return true;
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
 }

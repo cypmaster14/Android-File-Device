@@ -34,6 +34,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
+        <activity
+            android:name=".TextEditorPreferencesActivity"
+            android:parentActivityName=".TextEditor">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".TextEditor" />
+        </activity>
     </application>
 
 </manifest>

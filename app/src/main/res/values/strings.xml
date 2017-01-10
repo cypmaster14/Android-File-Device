@@ -24,4 +24,7 @@
     <string name="toast_insert_link">Insert link</string>
     <string name="toast_format_clear">Format clear</string>
     <string name="search">Search</string>
+    <string name="settings">Settings</string>
+
+
 </resources>
