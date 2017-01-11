@@ -1,4 +1,4 @@
-package com.example.ciprian.project_afd;
+package com.example.ciprian.project_afd.CustomListView;
 
 /**
  * Created by Ciprian on 24/12/2016.

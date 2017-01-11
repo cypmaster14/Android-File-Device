@@ -1,4 +1,4 @@
-package com.example.ciprian.project_afd;
+package com.example.ciprian.project_afd.TextEditor;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -15,9 +14,11 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Scroller;
 import android.widget.Toast;
+
+import com.example.ciprian.project_afd.MainActivity;
+import com.example.ciprian.project_afd.R;
 
 import org.apache.commons.io.FileUtils;
 
@@ -25,15 +26,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
 import io.github.mthli.knife.KnifeText;
 
-public class TextEditor extends AppCompatActivity implements TextWatcher {
+public class TextEditorActivity extends AppCompatActivity implements TextWatcher {
 
     public static final String FILE_CURRENT_CONTENT_BUNDLE = "FileCurrentContent";
     public static final String SAVE_BUTTON_SHOW_BUNDLE = "SaveButtonShow";
@@ -96,7 +95,7 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setTitle(file.getName());
-        textEditor.setScroller(new Scroller(TextEditor.this));
+        textEditor.setScroller(new Scroller(TextEditorActivity.this));
         textEditor.setVerticalScrollBarEnabled(true);
         textEditor.setText(fileCurrentContent);
         textEditor.addTextChangedListener(this);
@@ -148,10 +147,10 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
             case R.id.save:
                 Log.v("Save", "Save button pressed");
                 saveFile();
-                Toast.makeText(TextEditor.this, "Content was saved", Toast.LENGTH_SHORT).show();
+                Toast.makeText(TextEditorActivity.this, "Content was saved", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.menu_settings:
-                Intent intent = new Intent(TextEditor.this, TextEditorPreferencesActivity.class);
+                Intent intent = new Intent(TextEditorActivity.this, TextEditorPreferencesActivity.class);
                 startActivityForResult(intent, RESULT_SETTINGS);
 
             default:
@@ -174,7 +173,7 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
     }
 
     private void promptSaveDialog() {
-        new AlertDialog.Builder(TextEditor.this)
+        new AlertDialog.Builder(TextEditorActivity.this)
                 .setTitle("Close file")
                 .setMessage("Do you want to save the content of the file?")
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -182,14 +181,14 @@ public class TextEditor extends AppCompatActivity implements TextWatcher {
                     public void onClick(DialogInterface dialog, int which) {
                         saveFile();
 
-                        TextEditor.super.finish();
+                        TextEditorActivity.super.finish();
                     }
                 })
                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
-                        TextEditor.super.finish();
+                        TextEditorActivity.super.finish();
                     }
                 })
                 .show();

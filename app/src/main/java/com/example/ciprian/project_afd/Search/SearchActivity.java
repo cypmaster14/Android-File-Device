@@ -1,8 +1,7 @@
-package com.example.ciprian.project_afd;
+package com.example.ciprian.project_afd.Search;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AlertDialog;
@@ -12,6 +11,14 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.example.ciprian.project_afd.CustomListView.Item;
+import com.example.ciprian.project_afd.CustomListView.ItemAdapter;
+import com.example.ciprian.project_afd.FileOperations.FileExplorer;
+import com.example.ciprian.project_afd.MainActivity;
+import com.example.ciprian.project_afd.R;
+import com.example.ciprian.project_afd.TextEditor.TextEditorActivity;
+import com.example.ciprian.project_afd.UIWidgets.MySnackBar;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -31,11 +38,21 @@ public class SearchActivity extends AppCompatActivity implements AdapterView.OnI
     public final static String FILES_FOUND = "FILES_FOUND";
     private List<String> nameFilesFound;
 
+    private FileExplorer fileExplorer;
+    private MySnackBar mySnackBar;
+    private View coordinatorLayout;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.search_activity);
+
+        initUI(savedInstanceState);
+    }
+
+    private void initUI(Bundle savedInstanceState) {
+
 
         if (savedInstanceState != null) {
             nameFilesFound = savedInstanceState.getStringArrayList(FILES_FOUND);
@@ -56,14 +73,22 @@ public class SearchActivity extends AppCompatActivity implements AdapterView.OnI
                     .show();
         }
 
+        initListView();
+
+        coordinatorLayout = findViewById(R.id.activity_main2);
+        fileExplorer = new FileExplorer();
+        mySnackBar = new MySnackBar(coordinatorLayout);
+
+        getSupportActionBar().setTitle("Files Found");
+    }
+
+    private void initListView() {
         searchListView = (ListView) findViewById(R.id.search_listview);
         items = new ArrayList<>();
         populateListView(nameFilesFound);
         adapter = new ItemAdapter(this, R.layout.listview_item_row, items);
         searchListView.setAdapter(adapter);
         searchListView.setOnItemClickListener(this);
-
-        getSupportActionBar().setTitle("Files Found");
     }
 
 
@@ -113,11 +138,11 @@ public class SearchActivity extends AppCompatActivity implements AdapterView.OnI
                 finish();
             } else {
                 if (itemClicked.title.endsWith(".txt")) {
-                    Intent textEditorActivity = new Intent(SearchActivity.this, TextEditor.class);
+                    Intent textEditorActivity = new Intent(SearchActivity.this, TextEditorActivity.class);
                     textEditorActivity.putExtra(MainActivity.FILE_TO_OPEN, fileClicked.getAbsolutePath());
                     startActivityForResult(textEditorActivity, MainActivity.FILE_MODIFIED);
                 } else {
-                    openOtherFiles(getFileByName(itemClicked.title));
+                    fileExplorer.openOtherFiles(getFileByName(itemClicked.title), SearchActivity.this);
                 }
             }
         } catch (Exception e) {
@@ -126,60 +151,6 @@ public class SearchActivity extends AppCompatActivity implements AdapterView.OnI
         }
 
 
-    }
-
-    private void openOtherFiles(File url) {
-
-        Uri uri = Uri.fromFile(url);
-
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        // Check what kind of file you are trying to open, by comparing the url with extensions.
-        // When the if condition is matched, plugin sets the correct intent (mime) type,
-        // so Android knew what application to use to open the file
-        if (url.toString().contains(".doc") || url.toString().contains(".docx")) {
-            // Word document
-            intent.setDataAndType(uri, "application/msword");
-        } else if (url.toString().contains(".pdf")) {
-            // PDF file
-            intent.setDataAndType(uri, "application/pdf");
-        } else if (url.toString().contains(".ppt") || url.toString().contains(".pptx")) {
-            // Powerpoint file
-            intent.setDataAndType(uri, "application/vnd.ms-powerpoint");
-        } else if (url.toString().contains(".xls") || url.toString().contains(".xlsx")) {
-            // Excel file
-            intent.setDataAndType(uri, "application/vnd.ms-excel");
-        } else if (url.toString().contains(".zip") || url.toString().contains(".rar")) {
-            // WAV audio file
-            intent.setDataAndType(uri, "application/x-wav");
-        } else if (url.toString().contains(".rtf")) {
-            // RTF file
-            intent.setDataAndType(uri, "application/rtf");
-        } else if (url.toString().contains(".wav") || url.toString().contains(".mp3")) {
-            // WAV audio file
-            intent.setDataAndType(uri, "audio/x-wav");
-        } else if (url.toString().contains(".gif")) {
-            // GIF file
-            intent.setDataAndType(uri, "image/gif");
-        } else if (url.toString().contains(".jpg") || url.toString().contains(".jpeg") || url.toString().contains(".png")) {
-            // JPG file
-            intent.setDataAndType(uri, "image/jpeg");
-        } else if (url.toString().contains(".txt")) {
-            // Text file
-            intent.setDataAndType(uri, "text/plain");
-        } else if (url.toString().contains(".3gp") || url.toString().contains(".mpg") || url.toString().contains(".mpeg") || url.toString().contains(".mpe") || url.toString().contains(".mp4") || url.toString().contains(".avi")) {
-            // Video files
-            intent.setDataAndType(uri, "video/*");
-        } else {
-            //if you want you can also define the intent type for any other file
-
-            //additionally use else clause below, to manage other unknown extensions
-            //in this case, Android will show all applications installed on the device
-            //so you can choose which application to use
-            intent.setDataAndType(uri, "*/*");
-        }
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
     }
 
 

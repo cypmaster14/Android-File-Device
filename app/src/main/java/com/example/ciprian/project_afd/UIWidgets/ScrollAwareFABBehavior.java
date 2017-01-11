@@ -1,4 +1,4 @@
-package com.example.ciprian.project_afd;
+package com.example.ciprian.project_afd.UIWidgets;
 
 /**
  * Created by Ciprian on 10/01/2017.

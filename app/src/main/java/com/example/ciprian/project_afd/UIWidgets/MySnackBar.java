@@ -1,4 +1,4 @@
-package com.example.ciprian.project_afd;
+package com.example.ciprian.project_afd.UIWidgets;
 
 import android.graphics.Color;
 import android.support.design.widget.Snackbar;

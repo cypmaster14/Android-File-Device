@@ -1,4 +1,4 @@
-package com.example.ciprian.project_afd;
+package com.example.ciprian.project_afd.UIWidgets;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -13,6 +13,10 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.example.ciprian.project_afd.MainActivity;
+import com.example.ciprian.project_afd.R;
+import com.example.ciprian.project_afd.TextEditor.TextEditor;
 
 import org.apache.commons.io.FileUtils;
 

@@ -1,16 +1,15 @@
-package com.example.ciprian.project_afd;
+package com.example.ciprian.project_afd.FileOperations;
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.widget.SearchView;
 import android.view.MenuItem;
-import android.widget.Button;
 
-import java.io.File;
+import com.example.ciprian.project_afd.MainActivity;
+import com.example.ciprian.project_afd.SearchActivity;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
